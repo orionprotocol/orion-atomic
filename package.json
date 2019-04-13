@@ -1,0 +1,40 @@
+{
+  "name": "orion-atomic",
+  "version": "1.0.0",
+  "description": "Orion Atomic Swaps",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orionprotocol/orion-atomic.git"
+  },
+  "author": "Orion Protocol",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/orionprotocol/orion-atomic/issues"
+  },
+  "homepage": "https://github.com/orionprotocol/orion-atomic#readme",
+  "dependencies": {
+    "@waves/ride-js": "^0.17.4",
+    "@waves/waves-transactions": "^3.3.11",
+    "axios": "^0.18.0",
+    "axios-debug-log": "^0.4.0",
+    "bitcoin-core": "^2.0.0",
+    "bitcoinjs-lib": "^5.0.2",
+    "bip65": "^1.0.1",
+    "body-parser": "^1.18.3",
+    "express": "^4.16.4",
+    "node-fetch": "^2.3.0",
+    "randombytes": "^2.1.0",
+    "rxjs": "^6.4.0",
+    "rxjs-compat": "^6.4.0",
+    "ws": "^6.2.1"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "mocha": "^5.2.0"
+  }
+}
