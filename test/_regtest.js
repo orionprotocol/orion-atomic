@@ -2,6 +2,8 @@ const assert = require('assert')
 const bitcoin = require('bitcoinjs-lib')
 const Client = require('bitcoin-core')
 const getByteCount = require('./getByteCount')
+const { retryWhen, delay, take, concatMap, throwError } = require('rxjs/operators')
+const { from } = require('rxjs');
 
 const client = new Client({
     network: 'regtest',
@@ -21,21 +23,38 @@ async function mine (count) {
 }
 
 async function faucet (address, value) {
+    try {
+        await client.importMulti([{scriptPubKey: {address: address}, timestamp: Math.floor(Date.now() / 1000)}], {rescan: false})
+    } catch (e) {
+        throw new Error(`Couldn't import address: ${address}, reason: ${e}`)
+    }
+
     const txId = await client.sendToAddress(address, value / 1e8, 'sendtoaddress example', 'Nemo From Example.com')
     await client.generate(1)
 
     const tx = await client.getTransaction(txId)
     let unspent = tx.details[0]
     unspent.txId = txId
+    unspent.timestamp = tx.time
     return unspent
 }
 
-async function unspents (address) {
-    const res = await client.importMulti([{scriptPubKey: {address: address}, timestamp: 0}])
-    console.log(res)
-    const unspents = await client.listUnspent(1, 1000, [ address ])
+async function unspents (address, timestamp = 0) {
+    try {
+        const outs = await client.listUnspent(1, 1000, [address])
+        return outs
+    } catch (e) {
+        throw new Error(`Couldn't retrieve unspents for ${address}, reason: ${e}`)
+    }
+}
 
-    return unspents
+async function getBalance (address, timestamp = 0) {
+    const outs = await unspents(address, timestamp)
+    let sum = 0.0
+    for (const unspent of outs) {
+        sum += unspent.amount
+    }
+    return Number(sum.toFixed(8))
 }
 
 async function verify (txo) {
@@ -71,5 +90,6 @@ module.exports = {
     verify,
     randomAddress,
     getAddress,
+    getBalance,
     RANDOM_ADDRESS: randomAddress()
 }

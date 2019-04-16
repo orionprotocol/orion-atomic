@@ -4,7 +4,7 @@ require('axios-debug-log')
 const { transfer, order, broadcast, setScript, addressBalance, waitForTx } = require('@waves/waves-transactions')
 const wc = require('@waves/waves-crypto')
 const { Subject, ReplaySubject, interval, of } = require('rxjs');
-const { map, filter, takeWhile, switchMap, catchError, repeat, flatMap, delay, tap } = require('rxjs/operators');
+const { map, filter, takeWhile, switchMap, catchError, repeat, flatMap, first, delay, tap } = require('rxjs/operators');
 const rng = require('randombytes')
 const compiler = require('@waves/ride-js');
 const types = require('./types')
@@ -32,9 +32,9 @@ async function initiate(partyA, partyB, feeSeed, secretHash = null) {
     if (!secretHash) {
         secret = wc.randomUint8Array(settings.secretSize)
         const bufSecretHash = wc.sha256(secret)
-        secretHash = bufSecretHash.toString('hex')
+        secretHash = Buffer.from(bufSecretHash).toString('hex')
         base58SecretHash = wc.base58encode(bufSecretHash);
-    } if (typeof secretHash == 'string' ) {
+    } else if (typeof secretHash == 'string' ) {
         base58SecretHash = wc.base58encode(Buffer.from(secretHash, 'hex'))
     }
     const script = atomicSwapScript(partyA, partyB, unlockHeight, base58SecretHash)
@@ -43,7 +43,9 @@ async function initiate(partyA, partyB, feeSeed, secretHash = null) {
 
     const seed = await createSmartAddress(feeSeed)
 
-    await setScriptAndBroadcast(compiledScript.result.base64, seed)
+    const tx = await setScriptAndBroadcast(compiledScript.result.base64, seed)
+
+    await waitForTx(tx.id, 60000, settings.nodeUrl)
 
     return new types.Contract(wc.publicKey(seed), wc.address(seed, settings.network), script, secret, secretHash)
 }
@@ -67,7 +69,7 @@ async function audit (contractScript, partyB) {
 
 async function auditAccount(address, partyB, amount = null) {
     const scriptText = await getScriptText(address)
-    const secretHash = await audit(scriptText, partyB, amount)
+    const secretHash = await audit(scriptText, partyB)
     if (amount) {
         const bal = await getBalance(address)
         if (bal < amount) {
@@ -132,6 +134,10 @@ async function getBalance(address, assetId = settings.assetId) {
     }
 }
 
+async function getLastTransactions(address) {
+    return (await http().get(`transactions/address/${address}/limit/1`)).data[0][0]
+}
+
 async function waitForBalance(address, balance, assetId = null) {
     return interval(1000).pipe(
         flatMap(_ => from(getBalance(address, assetId))),
@@ -183,7 +189,7 @@ async function setScriptAndBroadcast(script, seed) {
     return broadcast(setScriptTx, settings.nodeUrl);
 }
 
-async function payToAddress(toAddress, amount, seed) {
+async function payToAddress(toAddress, amount, seed, nowait = false) {
     const signedTx = transfer({
         amount: amount,
         assetId: settings.assetId,
@@ -192,8 +198,15 @@ async function payToAddress(toAddress, amount, seed) {
 
     const tx = await broadcast(signedTx, settings.nodeUrl)
 
-    return waitForTx(tx.id, 60000, settings.nodeUrl)
+    return nowait ? tx : waitForTx(tx.id, 60000, settings.nodeUrl)
 
 }
 
-module.exports = { settings, initiate, auditAccount, redeem, payToAddress };
+async function watchRedeemTx(address) {
+    return interval(1000).pipe(
+        flatMap(_ => from(getLastTransactions(address))),
+        first(tx => tx.type === 4 && tx.sender === address)
+    ).toPromise();
+}
+
+module.exports = { settings, initiate, auditAccount, redeem, payToAddress, watchRedeemTx };

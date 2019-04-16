@@ -72,30 +72,13 @@ describe('Orion Waves Atomic Swap', function () {
         orion.wavesSwap.settings.assetId = undefined
     })
 
-    it('simple', async () => {
-        const secret = wc.randomUint8Array(orion.wavesSwap.settings.secretSize)
-        const secretHash = wc.base58encode(wc.sha256(secret));
-        console.log(secretHash)
-        console.log(wc.base58encode(secret))
-
-        const unsignedTransferTx = transfer({
-            amount: Math.round(20000000),
-            recipient: '3MqsgwpHV9gSyyfQDWNpg9tVQe7BsReZcPb',
-            senderPublicKey: '5HJnZpAdTpHhooP4tpKJ8eXfNog5RBxCzbYKsw68zSax',
-            fee: orion.wavesSwap.settings.defaultTransferFee,
-        })
-        unsignedTransferTx.proofs[0] = '6uXnfrs3Db6471SsVX6aGnmWQBKjWHz4BaYZPpEyKAVf'
-
-        console.log(unsignedTransferTx)
-        return broadcast(unsignedTransferTx, orion.wavesSwap.settings.nodeUrl)
+    it('test watchTx', async function() {
+        this.timeout(60000);
+        const someAmount = 4e5
+        await orion.wavesSwap.payToAddress(clientAddress, someAmount, faucetSeed)
+        await orion.wavesSwap.payToAddress( wc.address(faucetSeed, orion.wavesSwap.settings.network), someAmount, 'client', true)
+        const tx = await orion.wavesSwap.watchRedeemTx(clientAddress)
+        assert.strictEqual(tx.amount,  someAmount)
     })
 
-    async function f () {
-        //throw new Error('123')
-        return Promise.resolve(2 + 2)
-    }
-
-    it('chai', function () {
-        return f().should.be.rejectedWith(new Error('1'))
-    })
 })

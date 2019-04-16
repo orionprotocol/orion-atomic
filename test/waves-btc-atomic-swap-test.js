@@ -10,7 +10,7 @@ const axios = require('axios');
 
 describe('Orion Waves-BTC Atomic Swap', function () {
     orion.btcSwap.settings.network = regtestUtils.network
-    orion.btcSwap.settings.client = {unspents: regtestUtils.unspents, calcFee: regtestUtils.calcFee}
+    orion.btcSwap.settings.client = {unspents: regtestUtils.unspents, calcFee: regtestUtils.calcFee, getBalance: regtestUtils.getBalance}
 
     orion.wavesSwap.settings.network = 'T'
     orion.wavesSwap.settings.nodeUrl = 'https://pool.testnet.wavesnodes.com'
@@ -31,7 +31,7 @@ describe('Orion Waves-BTC Atomic Swap', function () {
     const wavesClientAddress = wc.address('client', orion.wavesSwap.settings.network)
 
     it('Btc to Waves atomic swap', async function () {
-        this.timeout(60000);
+        this.timeout(100000);
 
         // 1. Client initiate swap and create Contract address
         const contract = orion.btcSwap.initiate(clientPair.publicKey, orionPair.publicKey)
@@ -39,9 +39,10 @@ describe('Orion Waves-BTC Atomic Swap', function () {
         // 2. Client pays 0.5 BTC to that Contract address
         const unspent = await regtestUtils.faucet(contract.address, 5e6)
 
-        // 3. Client submit Contract and his Wave address to Orion for auditing, Orion extract Secret Hash
-        const secretHash = orion.btcSwap.audit(contract.script, orionPair.publicKey).toString('hex')
-        assert.strictEqual(secretHash, secretHash)
+        // 3. Client submit Contract and his Wave address to Orion for auditing, Orion retrieves balance and extracts Secret Hash
+        const balance = await orion.btcSwap.settings.client.getBalance(contract.address, unspent.timestamp)
+        const secretHash = (await orion.btcSwap.audit(contract.address, contract.script, orionPair.publicKey)).toString('hex')
+        assert.strictEqual(secretHash, contract.secretHash)
 
         // 4. Orion initiate his swap side on Waves blockchain
         const wavesContract = await orion.wavesSwap.initiate(wavesOrionAddress, wavesClientAddress, faucetSeed, secretHash)
@@ -60,19 +61,19 @@ describe('Orion Waves-BTC Atomic Swap', function () {
         const wavesRedeemTx = await orion.wavesSwap.redeem(wavesContract.publicKey, wavesClientAddress, contract.secret)
 
         // 8. Orion uses secret from WavesRedeemTx to redeem 0.5 btc on Bitcoin blockchain
-        const secretFromTx = Buffer.from(wc.base58decode(wavesRedeemTx.proofs[0]))
+        const watchedTx = await orion.wavesSwap.watchRedeemTx(wavesContract.address)
+        const secretFromTx = Buffer.from(wc.base58decode(watchedTx.proofs[0]))
         const reedemBtcContract = new orion.types.Contract(null, contract.address, contract.script, secretFromTx)
         const btcRedeemTx = await orion.btcSwap.redeem(reedemBtcContract, btcOrionAddress, orionPair)
         assert.strictEqual(btcRedeemTx.outs[0].value > (0.05 - 0.001)*1e8, true)
 
         await regtestUtils.broadcast(btcRedeemTx.toHex())
 
-        return regtestUtils.verify({
+        await regtestUtils.verify({
             txId: btcRedeemTx.getId(),
             address: btcOrionAddress,
             vout: 0,
             value: btcRedeemTx.outs[0].value
         })
-
     })
 })
