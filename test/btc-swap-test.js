@@ -34,6 +34,7 @@ describe('Orion BTC Atomic Swap', function () {
     })
 
     it('can redeem', async function () {
+        this.timeout(60000);
         const contract = orion.btcSwap.initiate(clientPair.publicKey, orionPair.publicKey)
         const unspent = await regtestUtils.faucet(contract.address, 1e7)
 
@@ -53,6 +54,7 @@ describe('Orion BTC Atomic Swap', function () {
     })
 
     it('can redeem 2 utxo', async function () {
+        this.timeout(60000);
         const contract = orion.btcSwap.initiate(clientPair.publicKey, orionPair.publicKey)
         await regtestUtils.faucet(contract.address, 1e7)
         await regtestUtils.faucet(contract.address, 2e7)
@@ -77,11 +79,13 @@ describe('Orion BTC Atomic Swap', function () {
     })
 
     it('can audit script', async function () {
+        this.timeout(60000);
         const contract = orion.btcSwap.initiate(clientPair.publicKey, orionPair.publicKey)
         assert.strictEqual(await orion.btcSwap.audit(contract.address, contract.script, orionPair.publicKey), contract.secretHash)
     })
 
     it('can audit script with balance', async function () {
+        this.timeout(60000);
         const contract = orion.btcSwap.initiate(clientPair.publicKey, orionPair.publicKey)
         await regtestUtils.faucet(contract.address, 2e6)
 

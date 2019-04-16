@@ -76,10 +76,10 @@ async function redeem (contract, toAddress, partyBPair) {
     // Note: nSequence MUST be <= 0xfffffffe otherwise LockTime is ignored, and is immediately spendable.
     const unspents = await settings.client.unspents(contract.address)
     let sum = 0.0
-    for (const unspent of unspents) {
-        txb.addInput(unspent.txid, unspent.vout)
-        sum += unspent.amount
-    }
+    unspents.forEach(u => {
+        txb.addInput(u.txid, u.vout)
+        sum += u.amount
+    })
     sum = Math.round(sum * 1e8)
 
     const fee = await settings.client.calcFee({'P2SH-P2WPKH': unspents.length}, {'P2PKH': 1})
