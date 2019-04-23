@@ -45,7 +45,7 @@ describe('Orion Waves Atomic Swap', function () {
 
         const redeemTx = await orion.wavesSwap.redeem(contract.publicKey, orionAddress, contract.secret)
 
-        return waitForTx(redeemTx.id, 60000, orion.wavesSwap.settings.nodeUrl)
+        return waitForTx(redeemTx.id, {timeout: 60000, apiBase: orion.wavesSwap.settings.nodeUrl})
     })
 
     it('can audit script', async function() {

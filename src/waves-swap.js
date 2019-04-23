@@ -45,7 +45,7 @@ async function initiate(partyA, partyB, feeSeed, secretHash = null) {
 
     const tx = await setScriptAndBroadcast(compiledScript.result.base64, seed)
 
-    await waitForTx(tx.id, 60000, settings.nodeUrl)
+    await waitForTx(tx.id, {timeout: 60000, apiBase: settings.nodeUrl})
 
     return new types.Contract(wc.publicKey(seed), wc.address(seed, settings.network), script, secret, secretHash)
 }
@@ -198,7 +198,7 @@ async function payToAddress(toAddress, amount, seed, nowait = false) {
 
     const tx = await broadcast(signedTx, settings.nodeUrl)
 
-    return nowait ? tx : waitForTx(tx.id, 60000, settings.nodeUrl)
+    return nowait ? tx : waitForTx(tx.id, {timeout: 60000, apiBase: settings.nodeUrl})
 
 }
 
