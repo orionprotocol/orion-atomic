@@ -94,7 +94,13 @@ class CloudClient {
     }
 }
 
-const client = new CloudClient()
+const client = new Client({
+    network: 'regtest',
+    username: 'user',
+    password: 'pass',
+    host: 'demo.orionprotocol.io',
+    port: 18443
+})
 
 async function broadcast (txHex) {
     return client.sendRawTransaction(txHex)
@@ -157,7 +163,8 @@ function randomAddress () {
 }
 
 async function calcFee (ins, outs) {
-    const { feerate } = await client.estimateSmartFee(2)
+    let { feerate } = await client.estimateSmartFee(2)
+    feerate = feerate ? feerate : 0.0002 //fallback to fixed fee rate
     const size = 291*Object.keys(ins).length + 34*Object.keys(outs).length
     return Math.round(feerate * size * 1e8 / 1024)
 }

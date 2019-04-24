@@ -49,7 +49,6 @@ async function audit(address, contractScript, partyBPubKey, amount = null) {
 
     const asm = bitcoin.script.toASM(contractScript)
     const chunks = bitcoin.script.decompile(contractScript)
-    console.log(ANY_CHUNK)
     const reqChunks = getContractChunks(ANY_CHUNK, partyBPubKey, ANY_CHUNK, ANY_CHUNK)
     for (let i = 0; i < chunks.length; i++) {
         if (reqChunks[i] !== ANY_CHUNK) {
