@@ -11,7 +11,7 @@
     "url": "git+https://github.com/orionprotocol/orion-atomic.git"
   },
   "author": "Orion Protocol",
-  "license": "MIT",
+  "license": "GPL-3.0",
   "bugs": {
     "url": "https://github.com/orionprotocol/orion-atomic/issues"
   },
@@ -35,7 +35,8 @@
   "devDependencies": {
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
+    "dhttp": "^3.0.0",
     "mocha": "^5.2.0",
-    "dhttp": "^3.0.0"
+    "typescript": "^3.4.5"
   }
 }
