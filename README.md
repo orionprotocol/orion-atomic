@@ -51,7 +51,7 @@ Read more about the Orion Protocol here: https://orionprotocol.io/
 
 ## Follow Us
 
-- [Telegram](https://t.me/holdvest)
+- [Telegram](https://t.me/orionprotocol)
 - [Twitter](https://twitter.com/OrionProtocl)
 
 ## License
